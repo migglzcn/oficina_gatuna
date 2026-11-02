@@ -16,7 +16,7 @@ function service() {
 }
 
 test('la tabla de capacitación respeta horas, comisión e IVA; no multiplica por participantes', () => {
-  for (const [hours, subtotal, total] of [[2, 1080, 1252.8], [4, 1660, 1925.6], [6, 2240, 2598.4], [8, 2820, 3271.2], [10, 3400, 3944]]) {
+  for (const [hours, subtotal, total] of [[2, 1160, 1345.6], [4, 1820, 2111.2], [6, 2480, 2876.8], [8, 3140, 3642.4], [10, 3800, 4408]]) {
     const quote = validQuote()
     quote.training.hours = hours
     quote.participants = 12
@@ -43,18 +43,18 @@ test('capacitación rechaza horas fuera de regla, mínimo reducido e IVA distint
     assert.ok(validateQuote(quote).some((issue) => issue.field === 'training.hours'))
   }
   const quote = validQuote()
-  quote.training.rate = 289
+  quote.training.rate = 329
   assert.ok(validateQuote(quote).some((issue) => issue.field === 'training.rate'))
-  quote.training.rate = 290; quote.discount.value = 1; quote.taxRate = 0
+  quote.training.rate = 330; quote.discount.value = 1; quote.taxRate = 0
   assert.ok(validateQuote(quote).some((issue) => issue.field === 'discount'))
   assert.ok(validateQuote(quote).some((issue) => issue.field === 'taxRate'))
 })
 test('un descuento es válido si conserva el mínimo neto de capacitación', () => {
   const quote = validQuote(); quote.training.hours = 10; quote.training.rate = 400
-  quote.discount = { type: 'fixed', value: 1100 }
-  assert.equal(calculateQuote(quote).base, 3400)
+  quote.discount = { type: 'fixed', value: 700 }
+  assert.equal(calculateQuote(quote).base, 3800)
   assert.deepEqual(validateQuote(quote), [])
-  quote.discount.value = 1100.01
+  quote.discount.value = 700.01
   assert.ok(validateQuote(quote).some((issue) => issue.field === 'discount'))
 })
 test('cálculos genéricos reproducen el ejemplo de 15,590.40 y el de 8,584.00', () => {
@@ -106,4 +106,18 @@ test('la lectura distingue cotizaciones válidas de datos corruptos', () => {
   const quote = validQuote()
   assert.equal(isQuote(JSON.parse(JSON.stringify(quote))), true)
   for (const invalid of [null, [], {}, { ...quote, provider: null }, { ...quote, items: [null] }, { ...quote, training: { ...quote.training, hours: null } }, { ...quote, discount: { type: 'anything', value: 4 } }]) assert.equal(isQuote(invalid), false)
+})
+test('asesorías a 330/h sin comisión ni paquete fijo de Excel',()=>{
+ const q=validQuote();q.kind='advisory';q.training.hours=1
+ assert.equal(calculateQuote(q).subtotal,330)
+ assert.equal(calculateQuote(q).total,382.8)
+ assert.equal(calculateQuote(q).items.length,1)
+ assert.deepEqual(validateQuote(q),[])
+ q.training.hours=3
+ assert.equal(calculateQuote(q).total,1148.4)
+ assert.deepEqual(validateQuote(q),[])
+ q.title='Asesoría de Excel';q.training.package='excel';q.training.hours=10
+ assert.equal(calculateQuote(q).subtotal,3300)
+ assert.equal(calculateQuote(q).total,3828)
+ assert.equal(isQuote(JSON.parse(JSON.stringify(q))),true)
 })

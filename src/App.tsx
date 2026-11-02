@@ -4,6 +4,7 @@ import { Dashboard } from './components/dashboard/Dashboard'
 import { Icon } from './components/dashboard/Icon'
 import { useOfficeStore } from './store/officeStore'
 import './App.css'
+import { QuoteArchive } from './components/quotes/QuoteArchive'
 import { QuotesWorkspace } from './components/quotes/QuotesWorkspace'
 import { useQuoteStore } from './store/quoteStore'
 
@@ -16,18 +17,23 @@ function App() {
   const resetCamera = useOfficeStore((s) => s.resetCamera)
   useEffect(() => {
     if (!running || mode === 'ai') return
+    if(mode === 'quote'){
+      const state=useQuoteStore.getState(),quote=state.quotes.find(q=>q.id===state.activeId)
+      if(quote)useOfficeStore.getState().setRequestContext({client:quote.client.name,course:quote.title,hours:quote.training.hours,discountRequested:quote.discount.value>0})
+    }
     const timeout = window.setTimeout(() => {
       if (mode === 'quote') completeStage(step)
       advance()
     }, mode === 'quote' ? 1400 : 3600)
     return () => window.clearTimeout(timeout)
   }, [running, step, mode, advance, completeStage])
-  const openChat = useOfficeStore((s) => s.openChat)
+  const openChat = useOfficeStore((s) => s.startNewClient)
   const newQuote = () => {
     if (running) return
     openChat()
     document.getElementById('oficina')?.scrollIntoView({ behavior: 'smooth' })
   }
+  if(window.location.pathname === '/cotizaciones')return <QuoteArchive />
   return <div className="app-shell">
     <nav className="sidebar" aria-label="Navegación principal">
       <a className="brand-mark" href="#inicio" aria-label="Midev inicio">m<span>·</span></a>
@@ -37,7 +43,7 @@ function App() {
     <div className="workspace" id="inicio">
       <header className="topbar"><a href="#inicio" className="wordmark">MIDEV<span>AI OFFICE</span></a><div className="breadcrumb">Workspace <span>/</span> Oficina virtual</div><div className="connection"><span className="status-dot" />Entorno local<span className="version">V.01</span></div></header>
       <main>
-        <div className="page-heading"><div><div className="eyebrow">TU ESPACIO DE INTELIGENCIA COLABORATIVA</div><h1>Grandes propuestas.<br className="mobile-break" /> Un gran equipo<span>.</span></h1><p>Bienvenido a tu oficina virtual. Aquí, cada detalle cuenta.</p></div><div className="page-heading-actions"><span className="department-tag"><Icon name="office" size={15} /> DEPARTAMENTO 01</span><button className="quote-primary" onClick={newQuote} disabled={running}>+ Nueva cotización</button></div></div>
+        <div className="page-heading"><div><div className="eyebrow">TU ESPACIO DE INTELIGENCIA COLABORATIVA</div><h1>Grandes propuestas.<br className="mobile-break" /> Un gran equipo<span>.</span></h1><p>Bienvenido a tu oficina virtual. Aquí, cada detalle cuenta.</p></div><div className="page-heading-actions"><a className="quote-secondary" href="/cotizaciones" target="_blank" rel="noopener noreferrer">Ver cotizaciones guardadas ↗</a><span className="department-tag"><Icon name="office" size={15} /> DEPARTAMENTO 01</span><button className="quote-primary" onClick={newQuote} disabled={running}>+ Nueva cotización</button></div></div>
         <div className="office-layout">
           <section className="office-view" id="oficina" aria-label="Oficina 3D interactiva de Cotizaciones">
             <div className="scene-header"><div><span className="room-icon"><Icon name="office" size={18} /></span><div><h2>Cotizaciones</h2><span>Piso 01 <i /> Oficina principal</span></div></div><span className={`live-badge ${running ? 'working' : ''}`}><span className="status-dot" />{running ? 'EN ACTIVIDAD' : 'EN LÍNEA'}</span></div>

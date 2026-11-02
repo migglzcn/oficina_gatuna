@@ -17,7 +17,7 @@ export interface Quote {
   reviewedAt: string | null
   provider: Party
   client: Party
-  kind: 'training' | 'service'
+  kind: 'training' | 'service' | 'advisory'
   title: string
   description: string
   scope: string

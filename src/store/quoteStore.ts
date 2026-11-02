@@ -47,8 +47,8 @@ const saved = readSaved()
 export const useQuoteStore = create<QuoteState>((set, get) => ({
   ...saved, processing: false, issues: [], results: [], savedAt: null, notice: '',
   receiveProposal: (incoming) => {
-    const s=get(), quote={...incoming, id:crypto.randomUUID(),folio:nextFolio(s.quotes),status:'pending' as const}
-    const quotes=[quote,...s.quotes]
+    const s=get(), existing=s.quotes.find(q=>q.id===incoming.id), quote={...incoming,folio:existing?.folio||nextFolio(s.quotes),status:incoming.status === 'draft' ? 'draft' as const : existing?.status === 'approved' ? 'approved' as const : 'pending' as const}
+    const quotes=[quote,...s.quotes.filter(q=>q.id!==quote.id)]
     set({quotes,activeId:quote.id,issues:[],results:[],...saveState(quotes,quote.id,s.storageBlocked)})
   },
   approve: () => {

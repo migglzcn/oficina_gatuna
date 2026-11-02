@@ -1,3 +1,4 @@
+import { QuotationCabinet } from '../furniture/QuotationCabinet'
 import { Box, Sign } from '../furniture/Primitives'
 import { Chair, Desk, Plant } from '../furniture/Furniture'
 import { ExecutiveCat } from '../characters/ExecutiveCat'
@@ -5,6 +6,7 @@ import { agents } from '../../data/agents'
 
 export function OfficeRoom() {
   return <group>
+    <QuotationCabinet/>
     <Box size={[9.5, 0.3, 8]} position={[0, -0.19, 0]} color="#79674f" />
     {Array.from({ length: 24 }, (_, i) => <Box key={i} size={[0.38, 0.09, 7.95]} position={[-4.56 + i * 0.397, 0, 0]} color={['#c7a477', '#cfae83', '#c4a177', '#d3b48d'][i % 4]} />)}
     <Box size={[9.5, 3.7, 0.16]} position={[0, 1.8, -4]} color="#e2e1cf" />

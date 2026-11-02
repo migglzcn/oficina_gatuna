@@ -39,9 +39,9 @@ La revisión es una comprobación local de datos y reglas. No llama a modelos de
 Fuente: `../Cotizadores/Reglas_de_precio_capacitacion_MiDev_2026-09-29.md`.
 
 - Sesiones de dos horas, entre dos y diez horas por curso.
-- Tarifa neta mínima de $290 MXN/hora más $500 MXN de comisión por curso.
+- Tarifa neta mínima de $330 MXN/hora más $500 MXN de comisión por curso.
 - IVA del 16% sobre el subtotal después del descuento.
-- Un descuento no puede reducir la base por debajo de `horas × 290 + 500`.
+- Un descuento no puede reducir la base por debajo de `horas × 330 + 500`.
 - Excel completo: diez horas / cinco sesiones, precio fijo de $7,000 + IVA, sin descuento.
 - Las tarifas son por curso; el número de participantes no multiplica el importe.
 
@@ -102,3 +102,27 @@ La duración predeterminada es diez horas. Una duración menor solicitada expres
 Los mensajes de coordinación no contienen precios redactados por la IA: Milo presenta el desglose calculado. La configuración comercial versionada está en `server/assistant.ts` y reutiliza `TRAINING_RULES`. Un curso fuera del temario autorizado se identifica como propuesta de contenido por confirmar. Las observaciones de Luna se adjuntan a la propuesta y no bloquean su presentación por falta de datos opcionales.
 
 Después de actualizar archivos del servidor, reinicia `npm run dev` para cargar la versión nueva (el proceso API actual no usa recarga automática).
+
+### Pendientes de Salem y SQLite
+
+El globo de Salem incluye «Pendientes y cotizaciones», actualizado cada 2.5 segundos. Muestra la solicitud, cliente, agente actual y si está en proceso, necesita aclaración, está interrumpida, falló o tiene cotización lista. Puedes retomar solicitudes y abrir los documentos terminados. Las consultas de estado no generan nuevas cotizaciones.
+
+Las solicitudes, avances y propuestas se conservan en `data/office.sqlite`, excluida de Git. Respalda ese archivo para conservar el historial. Si el servidor reinicia, las solicitudes activas quedan interrumpidas y pueden retomarse; no se presentan como completadas ni se reinician automáticamente. Las conversaciones antiguas sin registro de servidor no se importan como tareas retroactivamente. La generación sigue vinculada a la conexión de la petición: recargar o cancelar puede interrumpirla, pero el registro permanece.
+
+Durante el desarrollo `npm run dev` ahora inicia Vite con la API local integrada; no necesita un segundo proceso en el puerto 3001. Elimina la dependencia de servidores API antiguos y Vite recarga los cambios del flujo. `npm run dev:api` se conserva como servidor independiente para configuraciones de despliegue. Una conexión en curso se puede interrumpir al cambiar el código del servidor.
+
+Abrir el globo mientras hay trabajo en curso ya no limpia la conversación ni cancela esa solicitud. El inicio de cliente nuevo sigue disponible al finalizar.
+
+### Documentos guardados y descarga
+
+Abre `/cotizaciones` o «Ver cotizaciones guardadas» en el encabezado. Esta pestaña consulta la tabla `quotes` de SQLite y permite seleccionar, ver y descargar documentos HTML autónomos y datos JSON. Los borradores y propuestas generados se guardan al emitirse; los registros anteriores que contenían documentos se incorporan al crear la tabla. Los folios se asignan en el servidor y se conservan al actualizar el documento. El botón de importación permite guardar cotizaciones existentes del navegador sin sobrescribir versiones de servidor más recientes.
+
+La aprobación del chat también se envía a SQLite; si falla, se indica que solo está guardada en el navegador. «¡La mando, jefe!» se anuncia después de guardar una propuesta final en la base, y no representa envío por correo. Las descargas no generan PDFs.
+
+Los cursos Python, Codex y Claude tienen temarios base independientes por sesiones. La solicitud explícita del usuario prevalece sobre menciones de asistentes anteriores. Para esos cursos el contenido base y su revisión comercial no necesitan esperar nuevas consultas del modelo; la IA identifica los datos del cliente. Los documentos históricos no se reescriben automáticamente, y la vista advierte si detecta mezclas de herramientas entre el título y el contenido.
+
+La tarifa vigente se actualizó por instrucción del usuario a $330 por hora. Esta actualización prevalece sobre el importe histórico de $290 del documento fuente. Diez horas: $3,300 + $500 de comisión = $3,800 + IVA ($4,408 total). Las cotizaciones guardadas conservan su tarifa original; las nuevas usan $330. El paquete fijo de Excel mantiene $7,000 + IVA.
+
+### Asesorías sueltas
+
+Cursos y asesorías utilizan $330 por hora. Las asesorías se identifican como un tipo independiente (`advisory`), se cobran por las horas solicitadas más IVA del 16% y no incluyen comisión ni el paquete de Excel. No tienen la restricción de sesiones de dos horas propia de los cursos. Si no se indican horas de asesoría, Salem pregunta la duración antes de cotizar. Ejemplo: una hora, $330 + $52.80 de IVA = $382.80. Un curso normal de diez horas sigue en $3,800 + IVA = $4,408, incluyendo comisión de $500. Los documentos anteriores no se recalculan automáticamente.

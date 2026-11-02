@@ -1,6 +1,6 @@
 import type { Quote, QuoteIssue, QuoteItem, QuoteTotals } from './quoteTypes.ts'
 
-export const TRAINING_RULES = { minimumRate: 290, commission: 500, sessionHours: 2, maximumHours: 10, taxRate: 16, excelPrice: 7000 } as const
+export const TRAINING_RULES = { minimumRate: 330, commission: 500, sessionHours: 2, maximumHours: 10, taxRate: 16, excelPrice: 7000 } as const
 export const money = (value: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value)
 const cents = (value: number) => Math.round((value + Number.EPSILON) * 100)
 const safe = (value: number) => Number.isFinite(value) ? value : 0
@@ -19,12 +19,13 @@ export function createQuote(quotes: Quote[] = []): Quote {
     id: crypto.randomUUID(), folio: nextFolio(quotes), createdAt: now, updatedAt: now, status: 'draft', reviewedAt: null,
     provider: { ...emptyParty, name: 'MiDev', contact: 'Miguel Ángel González Contreras', email: 'migglzcn@gmail.com', phone: '55 5826 2574' },
     client: { ...emptyParty }, kind: 'training', title: '', description: '', scope: '', modality: 'En línea', location: '', schedule: 'Por acordar entre las partes', participants: 1,
-    training: { package: 'standard', hours: 2, rate: 290 }, items: [], discount: { type: 'percent', value: 0 }, taxRate: 16, advance: { type: 'percent', value: 50 },
+    training: { package: 'standard', hours: 2, rate: TRAINING_RULES.minimumRate }, items: [], discount: { type: 'percent', value: 0 }, taxRate: 16, advance: { type: 'percent', value: 50 },
     issueDate: localDate(), validityDays: 15, conditions: 'El servicio se agenda al confirmar el anticipo. Las licencias y suscripciones de las herramientas utilizadas no están incluidas.',
   }
 }
 export function quoteItems(quote: Quote): QuoteItem[] {
   if (quote.kind === 'service') return quote.items
+  if (quote.kind === 'advisory') return [{id:'advisory',description:quote.title.trim()||'Asesoría por hora',quantity:quote.training.hours,rate:quote.training.rate}]
   if (quote.training.package === 'excel') return [{ id: 'excel', description: 'Curso completo de Excel · 10 horas / 5 sesiones', quantity: 1, rate: TRAINING_RULES.excelPrice }]
   return [
     { id: 'training', description: `${quote.title.trim() || 'Capacitación'} · ${quote.training.hours / 2} sesiones de 2 horas`, quantity: quote.training.hours, rate: quote.training.rate },
@@ -59,6 +60,11 @@ export function validateQuote(quote: Quote, others: Quote[] = [], options: { all
   if (!/^\d{4}-\d{2}-\d{2}$/.test(quote.issueDate) || Number.isNaN(date.getTime()) || localDate(date) !== quote.issueDate) issues.push({ field: 'issueDate', message: 'Selecciona una fecha de emisión válida.' })
   number('validityDays', quote.validityDays, 1, 365, 'Vigencia', true)
   number('taxRate', quote.taxRate, 0, 100, 'IVA')
+  if (quote.kind === 'advisory') {
+    number('training.hours',quote.training.hours,0.01,10000,'Horas de asesoría')
+    number('training.rate',quote.training.rate,TRAINING_RULES.minimumRate,1000000,'Tarifa por hora')
+    if(quote.taxRate!==16)issues.push({field:'taxRate',message:'Las asesorías se cotizan con IVA del 16%.'})
+  }
   if (quote.kind === 'training') {
     if (!(options.allowPending && quote.participants === null)) number('participants', quote.participants ?? 0, 1, 10000, 'Participantes', true)
     if (![2, 4, 6, 8, 10].includes(quote.training.hours)) issues.push({ field: 'training.hours', message: 'La capacitación debe tener de 1 a 5 sesiones de 2 horas (máximo 10 horas).' })
@@ -91,7 +97,7 @@ export function isQuote(value: unknown): value is Quote {
   const strings = ['id', 'folio', 'createdAt', 'updatedAt', 'title', 'description', 'scope', 'location', 'schedule', 'issueDate', 'conditions']
   if (!strings.every((key) => typeof value[key] === 'string')) return false
   if (!['draft', 'reviewed', 'pending', 'approved'].includes(String(value.status)) || !(value.reviewedAt === null || typeof value.reviewedAt === 'string')) return false
-  if (!['training', 'service'].includes(String(value.kind)) || !['En línea', 'Presencial', 'Híbrida', 'Por confirmar'].includes(String(value.modality))) return false
+  if (!['training', 'service', 'advisory'].includes(String(value.kind)) || !['En línea', 'Presencial', 'Híbrida', 'Por confirmar'].includes(String(value.modality))) return false
   if (!['taxRate', 'validityDays'].every((key) => typeof value[key] === 'number' && Number.isFinite(value[key]))) return false
   if (!(value.participants === null || typeof value.participants === 'number' && Number.isFinite(value.participants))) return false
   for (const key of ['provider', 'client']) {
