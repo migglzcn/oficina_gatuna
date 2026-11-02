@@ -127,3 +127,4 @@ La tarifa vigente se actualizó por instrucción del usuario a $330 por hora. Es
 
 Cursos y asesorías utilizan $330 por hora. Las asesorías se identifican como un tipo independiente (`advisory`), se cobran por las horas solicitadas más IVA del 16% y no incluyen comisión ni el paquete de Excel. No tienen la restricción de sesiones de dos horas propia de los cursos. Si no se indican horas de asesoría, Salem pregunta la duración antes de cotizar. Ejemplo: una hora, $330 + $52.80 de IVA = $382.80. Un curso normal de diez horas sigue en $3,800 + IVA = $4,408, incluyendo comisión de $500. Los documentos anteriores no se recalculan automáticamente.
 # oficina_gatuna
+# oficina_nueva
